@@ -1,6 +1,6 @@
 
 NAME=milkcheck
-VERSION=1.2.2
+VERSION=1.2.3
 TARBALL=$(NAME)-$(VERSION).tar.gz
 SPECFILE=$(NAME).spec
 RPMTOPDIR=$$PWD/RPMBUILD
@@ -46,7 +46,10 @@ clean:
 	rm -rf $(RPMTOPDIR) build/
 
 test:
-	export PYTHONPATH=$$PWD/lib/ ; nosetests --exe --all-modules -w tests
+	export PYTHONPATH=$$PWD/lib/ ; nosetests2 --exe --all-modules -w tests
+
+test3:
+	export PYTHONPATH=$$PWD/lib/ ; nosetests3 --exe --all-modules -w tests
 
 $(MANPAGE): $(MANSOURCE)
 	a2x -f manpage $<
