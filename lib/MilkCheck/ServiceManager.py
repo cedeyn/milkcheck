@@ -171,6 +171,7 @@ class ServiceManager(ServiceGroup):
             self._disable_deps()
 
         self.run(action)
+        self.update_status(self.eval_deps_status())
 
     def output_graph(self, services=None, excluded=None):
         """Return service graph (DOT format)"""
