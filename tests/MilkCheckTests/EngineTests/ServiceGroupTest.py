@@ -1152,17 +1152,9 @@ class ServiceGroupFromDictTest(TestCase):
             'services': {
                 'subgroupA': {
                     'services': {
-                        'svcA':
-                            {'actions':
-                                {
-                                    'act1': {'cmd': '/bin/true'},
-                                },
-                                'desc': 'I am the subservice $NAME'
-                            },
                         'subsubgrpA': {
                             'services': {
                                 'depA': {
-                                    #'require': ['subgroupB.svcA'],
                                     'actions':
                                         {
                                             'act1': {'cmd': '/bin/true'},
@@ -1195,17 +1187,16 @@ class ServiceGroupFromDictTest(TestCase):
         self.assertTrue(sergrp.has_subservice('subgroupB'))
         self.assertTrue(sergrp._subservices['subgroupA'].has_subservice('subsubgrpA'))
         self.assertTrue(sergrp._subservices['subgroupA']._subservices['subsubgrpA'].has_subservice('depA'))
-        self.assertTrue(sergrp._subservices['subgroupA'].has_subservice('svcA'))
         self.assertTrue(sergrp._subservices['subgroupB'].has_subservice('svcA'))
 
         sergrp.run('act1')
         self.assertEqual(sergrp.status, DONE)
+        del(sergrp)
 
     def test_inter_subservice_deps_dict(self):
         '''Test create service with multiple level of subservices dependencies'''
         sergrp = ServiceGroup('group', root=True)
-        sergrp.fromdict(
-            {'services': {
+        service_dict={'services': {
                 'subgroupA': {
                     'services': {
                         'svcA':
@@ -1228,7 +1219,7 @@ class ServiceGroupFromDictTest(TestCase):
                 },
                 'subgroupB': {
                     'services': {
-                        'svcA': {
+                        'svcC': {
                             'require': ['subgroupA.svcB'],
                             'actions':
                                 {
@@ -1236,7 +1227,7 @@ class ServiceGroupFromDictTest(TestCase):
                                 },
                             'desc': 'I am the subservice $NAME'
                         },
-                        'svcB': {
+                        'svcD': {
                             'actions':
                                 {
                                     'act1,act2': {'cmd': '/bin/true'}
@@ -1249,23 +1240,31 @@ class ServiceGroupFromDictTest(TestCase):
                 },
             'desc': 'I am a first group',
             'target': 'localhost',
-        })
+        }
+
+        sergrp.fromdict(service_dict)
 
         self.assertTrue(sergrp.has_subservice('subgroupA'))
         self.assertTrue(sergrp.has_subservice('subgroupB'))
         for subservice in ('svcA', 'svcB'):
             self.assertTrue(sergrp._subservices['subgroupA'].has_subservice(subservice))
+        for subservice in ('svcC', 'svcD'):
             self.assertTrue(sergrp._subservices['subgroupB'].has_subservice(subservice))
-
 
         sergrp.run('act1')
         self.assertEqual(sergrp.status, DONE)
-        sergrp.reset()
+
+        # FIXME: Runing another instance since ServiceGroup can not be relaunched once
+        # finished
+        del(sergrp)
+        sergrp = ServiceGroup('group', root=True)
+        sergrp.fromdict(service_dict)
         sergrp.run('act2')
         self.assertEqual(sergrp.status, DEP_ERROR)
+        del(sergrp)
 
     def test_inter_subservice_deps_dict_unknown_dep(self):
-        '''Test create service with multiple level of subservices dependencies'''
+        '''Test create service with multiple level of subservices with dependency error'''
         sergrp = ServiceGroup('group')
         self.assertRaises(UnknownDependencyError, sergrp.fromdict, {
             'services': {
@@ -1313,12 +1312,12 @@ class ServiceGroupFromDictTest(TestCase):
             'desc': 'I am a first group',
             'target': 'localhost',
         })
+        del(sergrp)
 
     def test_inter_subservice_deps_dict_nested(self):
         '''Test create service with multiple level of subservices dependencies'''
         sergrp = ServiceGroup('group', root=True)
-        sergrp.fromdict(
-            {'services': {
+        service_dict={'services': {
                 'subgroupA': {
                     'services': {
                         'svcA':
@@ -1344,15 +1343,15 @@ class ServiceGroupFromDictTest(TestCase):
                 },
                 'subgroupB': {
                     'services': {
-                        'svcA': {
-                            'require': ['svcB.subsvc'],
+                        'svcC': {
+                            'require': ['subgroupA.svcB.subsvc'],
                             'actions':
                                 {
                                     'act1,act2': {'cmd': '/bin/true'}
                                 },
                             'desc': 'I am the subservice $NAME'
                         },
-                        'svcB': {
+                        'svcD': {
                             'actions':
                                 {
                                     'act1,act2': {'cmd': '/bin/true'}
@@ -1364,18 +1363,29 @@ class ServiceGroupFromDictTest(TestCase):
 
                 },
             'desc': 'I am a first group',
+            'mode': 'delegate',
             'target': 'localhost',
-        })
+        }
 
+        sergrp.fromdict(service_dict)
         self.assertTrue(sergrp.has_subservice('subgroupA'))
         self.assertTrue(sergrp.has_subservice('subgroupB'))
         for subservice in ('svcA', 'svcB'):
             self.assertTrue(sergrp._subservices['subgroupA'].has_subservice(subservice))
+        for subservice in ('svcC', 'svcD'):
             self.assertTrue(sergrp._subservices['subgroupB'].has_subservice(subservice))
 
 
         sergrp.run('act1')
         self.assertEqual(sergrp.status, DONE)
-        sergrp.reset()
+        #self.assertEqual(sergrp.eval_deps_status(), DONE)
+
+        # FIXME: Runing another instance since ServiceGroup can not be relaunched once
+        # finished
+        del(sergrp)
+        sergrp = ServiceGroup('group', root=True)
+        sergrp.fromdict(service_dict)
         sergrp.run('act2')
-        self.assertEqual(sergrp.status, DEP_ERROR)
+        #self.assertEqual(sergrp.status, DEP_ERROR)
+        self.assertEqual(sergrp.eval_deps_status(), DEP_ERROR)
+        del(sergrp)

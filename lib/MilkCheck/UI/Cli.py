@@ -605,6 +605,7 @@ class CommandLine(CoreEvent):
             RC_EXCEPTION = 9: User error (options or configuration)
             RC_UNKNOWN_EXCEPTION = 12: Internal error (this is probably a bug)
         '''
+        #print(self.manager.eval_deps_status())
         if self.manager.status in (DEP_ERROR, ERROR):
             return RC_ERROR
         elif self.manager.has_warnings():
