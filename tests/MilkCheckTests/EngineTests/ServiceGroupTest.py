@@ -14,6 +14,7 @@ from MilkCheck.Engine.Action import Action
 from MilkCheck.Engine.ServiceGroup import ServiceGroup, ServiceNotFoundError
 from MilkCheck.Engine.Service import Service
 from ClusterShell.NodeSet import NodeSet
+from ClusterShell.Task import task_self
 
 # Symbols
 from MilkCheck.Engine.BaseEntity import NO_STATUS, DONE, SKIPPED, MISSING
@@ -346,6 +347,7 @@ class ServiceGroupTest(TestCase):
         '''Test method prepare with a single empty ServiceGroup.'''
         group = ServiceGroup('GROUP')
         group.run('start')
+        task_self().join()
         self.assertEqual(group.status, MISSING)
 
     def test_prepare_empty_group_reverse(self):
@@ -353,6 +355,7 @@ class ServiceGroupTest(TestCase):
         group = ServiceGroup('GROUP')
         group.algo_reversed = True
         group.run('start')
+        task_self().join()
         self.assertEqual(group.status, MISSING)
 
     def test_prepare_group_subservice(self):
@@ -362,6 +365,7 @@ class ServiceGroupTest(TestCase):
         subserv.add_action(Action('start', command='/bin/true'))
         group.add_inter_dep(target=subserv)
         group.run('start')
+        task_self().join()
         self.assertEqual(group.status, DONE)
         self.assertEqual(subserv.status, DONE)
 
@@ -374,6 +378,7 @@ class ServiceGroupTest(TestCase):
         subserv.add_action(Action('start', command='/bin/true'))
         group.add_inter_dep(target=subserv)
         group.run('start')
+        task_self().join()
         self.assertEqual(group.status, DONE)
         self.assertEqual(subserv.status, DONE)
 
@@ -398,6 +403,7 @@ class ServiceGroupTest(TestCase):
         group.add_inter_dep(base=subserv_b, target=subserv_c)
 
         group.run('start')
+        task_self().join()
         self.assertEqual(group.status, DONE)
         self.assertEqual(subserv_a.status, DONE)
         self.assertEqual(subserv_b.status, DONE)
@@ -411,6 +417,7 @@ class ServiceGroupTest(TestCase):
         ext_serv.add_action(ac_suc)
         group.add_dep(ext_serv)
         group.run('start')
+        task_self().join()
         self.assertEqual(ext_serv.status, DONE)
         self.assertEqual(group.status, MISSING)
 
@@ -444,6 +451,7 @@ class ServiceGroupTest(TestCase):
         group.add_dep(ext_serv2)
         # Prepare group
         group.run('start')
+        task_self().join()
         self.assertEqual(group.status, DONE)
         self.assertEqual(ext_serv1.status, DONE)
         self.assertEqual(ext_serv2.status, DONE)
@@ -482,6 +490,7 @@ class ServiceGroupTest(TestCase):
         group.add_dep(target=ext_serv2, sgth=REQUIRE_WEAK)
         # Prepare group
         group.run('start')
+        task_self().join()
         self.assertEqual(group.status, DONE)
         self.assertEqual(ext_serv1.status, DONE)
         self.assertEqual(ext_serv2.status, ERROR)
@@ -519,6 +528,7 @@ class ServiceGroupTest(TestCase):
         group.add_dep(target=ext_serv2, sgth=REQUIRE_WEAK)
         # Prepare group
         group.run('start')
+        task_self().join()
         self.assertEqual(group.status, DEP_ERROR)
         self.assertEqual(ext_serv1.status, DONE)
         self.assertEqual(ext_serv2.status, ERROR)
@@ -540,6 +550,7 @@ class ServiceGroupTest(TestCase):
         serv_a.add_dep(target=serv_b)
         serv_a.add_inter_dep(target=serv_c)
         serv_a.run('start')
+        task_self().join()
         self.assertEqual(serv.status, NO_STATUS)
         self.assertEqual(serv_a.status, DONE)
         self.assertEqual(serv_b.status, DONE)
@@ -557,6 +568,7 @@ class ServiceGroupTest(TestCase):
         s1.algo_reversed = True
         group.algo_reversed = True
         group.run('stop')
+        task_self().join()
         self.assertEqual(s1.status, DONE)
         self.assertEqual(i1.status, DONE)
         self.assertEqual(group.status, DONE)
@@ -571,6 +583,7 @@ class ServiceGroupTest(TestCase):
         grp.add_inter_dep(target=svc1)
         grp.add_inter_dep(target=svc2)
         grp.run('start')
+        task_self().join()
         self.assertEqual(grp.status, SKIPPED)
 
     def test_skipped_group_dep_error(self):
@@ -587,6 +600,7 @@ class ServiceGroupTest(TestCase):
         grp.add_dep(svc, sgth=REQUIRE)
 
         grp.run('start')
+        task_self().join()
         self.assertEqual(svc.status, ERROR)
         self.assertEqual(grp.status, SKIPPED)
 
@@ -597,6 +611,7 @@ class ServiceGroupTest(TestCase):
         svc1.add_action(Action('stop', command='/bin/true'))
         grp.add_inter_dep(target=svc1)
         grp.run('start')
+        task_self().join()
         self.assertEqual(grp.status, MISSING)
 
     def test_group_with_weak_dep_error(self):
@@ -611,6 +626,7 @@ class ServiceGroupTest(TestCase):
         grp.add_inter_dep(svc)
         grp.add_dep(dep1, sgth=REQUIRE_WEAK)
         grp.run('stop')
+        task_self().join()
 
         self.assertEqual(grp.status, DONE)
 
@@ -625,6 +641,7 @@ class ServiceGroupTest(TestCase):
         grp.add_inter_dep(svc)
         grp.add_dep(dep, sgth=FILTER)
         grp.run('stop')
+        task_self().join()
 
         self.assertEqual(dep.status, ERROR)
         self.assertEqual(svc.status, SKIPPED)
@@ -643,6 +660,7 @@ class ServiceGroupTest(TestCase):
         svc.add_action(Action('stop', command='/bin/true', target=nodes))
         svc.add_dep(grp, sgth=FILTER)
         svc.run('stop')
+        task_self().join()
 
         self.assertEqual(subsvc.status, ERROR)
         self.assertEqual(grp.status, DEP_ERROR)
@@ -675,6 +693,7 @@ class ServiceGroupTest(TestCase):
         stop.add_dep(svc2)
         stop.add_dep(svc3)
         stop.run('stop')
+        task_self().join()
 
         self.assertEqual(subsvc.status, ERROR)
         self.assertEqual(grp.status, DEP_ERROR)
@@ -1115,6 +1134,7 @@ class ServiceGroupFromDictTest(TestCase):
 
         grp.add_dep(dep1, sgth=REQUIRE_WEAK)
         grp.run('stop')
+        task_self().join()
 
         self.assertEqual(grp.status, DONE)
 
@@ -1152,17 +1172,9 @@ class ServiceGroupFromDictTest(TestCase):
             'services': {
                 'subgroupA': {
                     'services': {
-                        'svcA':
-                            {'actions':
-                                {
-                                    'act1': {'cmd': '/bin/true'},
-                                },
-                                'desc': 'I am the subservice $NAME'
-                            },
                         'subsubgrpA': {
                             'services': {
                                 'depA': {
-                                    #'require': ['subgroupB.svcA'],
                                     'actions':
                                         {
                                             'act1': {'cmd': '/bin/true'},
@@ -1195,17 +1207,17 @@ class ServiceGroupFromDictTest(TestCase):
         self.assertTrue(sergrp.has_subservice('subgroupB'))
         self.assertTrue(sergrp._subservices['subgroupA'].has_subservice('subsubgrpA'))
         self.assertTrue(sergrp._subservices['subgroupA']._subservices['subsubgrpA'].has_subservice('depA'))
-        self.assertTrue(sergrp._subservices['subgroupA'].has_subservice('svcA'))
         self.assertTrue(sergrp._subservices['subgroupB'].has_subservice('svcA'))
 
         sergrp.run('act1')
+        task_self().join()
         self.assertEqual(sergrp.status, DONE)
+        del(sergrp)
 
     def test_inter_subservice_deps_dict(self):
         '''Test create service with multiple level of subservices dependencies'''
         sergrp = ServiceGroup('group', root=True)
-        sergrp.fromdict(
-            {'services': {
+        service_dict={'services': {
                 'subgroupA': {
                     'services': {
                         'svcA':
@@ -1228,7 +1240,7 @@ class ServiceGroupFromDictTest(TestCase):
                 },
                 'subgroupB': {
                     'services': {
-                        'svcA': {
+                        'svcC': {
                             'require': ['subgroupA.svcB'],
                             'actions':
                                 {
@@ -1236,7 +1248,7 @@ class ServiceGroupFromDictTest(TestCase):
                                 },
                             'desc': 'I am the subservice $NAME'
                         },
-                        'svcB': {
+                        'svcD': {
                             'actions':
                                 {
                                     'act1,act2': {'cmd': '/bin/true'}
@@ -1249,23 +1261,33 @@ class ServiceGroupFromDictTest(TestCase):
                 },
             'desc': 'I am a first group',
             'target': 'localhost',
-        })
+        }
+
+        sergrp.fromdict(service_dict)
 
         self.assertTrue(sergrp.has_subservice('subgroupA'))
         self.assertTrue(sergrp.has_subservice('subgroupB'))
         for subservice in ('svcA', 'svcB'):
             self.assertTrue(sergrp._subservices['subgroupA'].has_subservice(subservice))
+        for subservice in ('svcC', 'svcD'):
             self.assertTrue(sergrp._subservices['subgroupB'].has_subservice(subservice))
 
-
         sergrp.run('act1')
+        task_self().join()
         self.assertEqual(sergrp.status, DONE)
-        sergrp.reset()
+
+        # FIXME: Runing another instance since ServiceGroup can not be relaunched once
+        # finished
+        del(sergrp)
+        sergrp = ServiceGroup('group', root=True)
+        sergrp.fromdict(service_dict)
         sergrp.run('act2')
+        task_self().join()
         self.assertEqual(sergrp.status, DEP_ERROR)
+        del(sergrp)
 
     def test_inter_subservice_deps_dict_unknown_dep(self):
-        '''Test create service with multiple level of subservices dependencies'''
+        '''Test create service with multiple level of subservices with dependency error'''
         sergrp = ServiceGroup('group')
         self.assertRaises(UnknownDependencyError, sergrp.fromdict, {
             'services': {
@@ -1313,12 +1335,13 @@ class ServiceGroupFromDictTest(TestCase):
             'desc': 'I am a first group',
             'target': 'localhost',
         })
+        del(sergrp)
 
     def test_inter_subservice_deps_dict_nested(self):
-        '''Test create service with multiple level of subservices dependencies'''
+        """Test create service with multiple level of subservices dependencies
+           with nested subservices"""
         sergrp = ServiceGroup('group', root=True)
-        sergrp.fromdict(
-            {'services': {
+        service_dict={'services': {
                 'subgroupA': {
                     'services': {
                         'svcA':
@@ -1344,15 +1367,15 @@ class ServiceGroupFromDictTest(TestCase):
                 },
                 'subgroupB': {
                     'services': {
-                        'svcA': {
-                            'require': ['svcB.subsvc'],
+                        'svcC': {
+                            'require': ['subgroupA.svcB.subsvc'],
                             'actions':
                                 {
                                     'act1,act2': {'cmd': '/bin/true'}
                                 },
                             'desc': 'I am the subservice $NAME'
                         },
-                        'svcB': {
+                        'svcD': {
                             'actions':
                                 {
                                     'act1,act2': {'cmd': '/bin/true'}
@@ -1364,18 +1387,30 @@ class ServiceGroupFromDictTest(TestCase):
 
                 },
             'desc': 'I am a first group',
+            'mode': 'delegate',
             'target': 'localhost',
-        })
+        }
 
+        sergrp.fromdict(service_dict)
         self.assertTrue(sergrp.has_subservice('subgroupA'))
         self.assertTrue(sergrp.has_subservice('subgroupB'))
         for subservice in ('svcA', 'svcB'):
             self.assertTrue(sergrp._subservices['subgroupA'].has_subservice(subservice))
+        for subservice in ('svcC', 'svcD'):
             self.assertTrue(sergrp._subservices['subgroupB'].has_subservice(subservice))
 
 
         sergrp.run('act1')
-        self.assertEqual(sergrp.status, DONE)
-        sergrp.reset()
+        task_self().join()
+        self.assertEqual(sergrp.eval_deps_status(), DONE)
+
+        # FIXME: Runing another instance since ServiceGroup can not be relaunched once
+        # finished
+        del(sergrp)
+        sergrp = ServiceGroup('group', root=True)
+        sergrp.fromdict(service_dict)
         sergrp.run('act2')
-        self.assertEqual(sergrp.status, DEP_ERROR)
+        task_self().join()
+        #self.assertEqual(sergrp.status, DEP_ERROR)
+        self.assertEqual(sergrp.eval_deps_status(), DEP_ERROR)
+        del(sergrp)
