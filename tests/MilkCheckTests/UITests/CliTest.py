@@ -61,17 +61,17 @@ class MyOutput(StringIO):
         line = re.sub('\noptions:\n', '\nOptions:\n', line)
 
         # Clear secounds elapsed
-        line = re.sub(' [0-9]+\.[0-9]+ s', ' 0.00 s', line)
+        line = re.sub(r' [0-9]+\.[0-9]+ s', ' 0.00 s', line)
         # All time related to midnight
-        line = re.sub('\[[0-9]{2}:[0-9]{2}:[0-9]{2}\] ', '[00:00:00] ', line)
+        line = re.sub(r'\[[0-9]{2}:[0-9]{2}:[0-9]{2}\] ', '[00:00:00] ', line)
         # Replace local hostname by "HOSTNAME"
         line = re.sub(HOSTNAME, 'HOSTNAME', line)
 
         # SSH output is different with OpenSSH (4.x ?)
         # We modify the output to match those from OpenSSH 5.x
-        line = re.sub('ssh: (\w+): (Name or service not known)',
+        line = re.sub(r'ssh: (\w+): (Name or service not known)',
                       'ssh: Could not resolve hostname \\1: \\2', line)
-        line = re.sub('ssh: (\w+): (Temporary failure in name resolution)',
+        line = re.sub(r'ssh: (\w+): (Temporary failure in name resolution)',
                       'ssh: Could not resolve hostname \\1: \\2', line)
 
         # SSH output is different with OpenSSH (>= 6.6)
@@ -79,11 +79,11 @@ class MyOutput(StringIO):
         # by default
         def lower_hostname(match):
             return "ssh: Could not resolve hostname %s" % match.group(1).lower()
-        line = re.sub('ssh: Could not resolve hostname (\w+):.*',
+        line = re.sub(r'ssh: Could not resolve hostname (\w+):.*',
                       lower_hostname, line)
 
         # Traceback output doesn't need line number and source location
-        line = re.sub('File .*, line .*, in (.*)',
+        line = re.sub(r'File .*, line .*, in (.*)',
                       'File "source.py", line 000, in \\1', line)
         StringIO.write(self, line)
 
@@ -1354,6 +1354,7 @@ Options:
     self.manager.call_services(services, action, conf=self._conf)
   File "source.py", line 000, in <lambda>
     lambda services, action, conf=None: raiser(ZeroDivisionError)
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^
   File "source.py", line 000, in raiser
     raise exception
 ZeroDivisionError
