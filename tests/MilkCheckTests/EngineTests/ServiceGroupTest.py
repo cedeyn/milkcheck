@@ -1345,7 +1345,7 @@ class ServiceGroupFromDictTest(TestCase):
                 'subgroupB': {
                     'services': {
                         'svcA': {
-                            'require': ['svcB.subsvc'],
+                            'require': ['subgroupA.svcB.subsvc'],
                             'actions':
                                 {
                                     'act1,act2': {'cmd': '/bin/true'}
