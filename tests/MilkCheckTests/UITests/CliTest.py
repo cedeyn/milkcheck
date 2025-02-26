@@ -261,7 +261,7 @@ S3 - I am the service S3                                          [DEP_ERROR]
 """start G1.I1 on HOSTNAME
  > echo ok
 G1.I1 - I am the service I1                                       [    OK   ]
-start G1.I2 on BADNODE,HOSTNAME
+start G1.I2 on {}
  > /bin/true
 start G1.I2 ran in 0.00 s
  > BADNODE: ssh: Could not resolve hostname badnode
@@ -270,7 +270,7 @@ start G1.I2 ran in 0.00 s
 G1.I2 - I am the service I2                                       [  ERROR  ]
 G1                                                                [DEP_ERROR]
 S3 - I am the service S3                                          [DEP_ERROR]
-""")
+""".format(NodeSet('BADNODE,HOSTNAME')))
 
     def test_execute_verbosity_2(self):
         '''CLI execute() (-vv)'''
@@ -281,7 +281,7 @@ start G1.I1 ran in 0.00 s
  > HOSTNAME: ok
  > HOSTNAME exited with 0
 G1.I1 - I am the service I1                                       [    OK   ]
-start G1.I2 on BADNODE,HOSTNAME
+start G1.I2 on {}
  > /bin/true
 start G1.I2 ran in 0.00 s
  > BADNODE: ssh: Could not resolve hostname badnode
@@ -290,7 +290,7 @@ start G1.I2 ran in 0.00 s
 G1.I2 - I am the service I2                                       [  ERROR  ]
 G1                                                                [DEP_ERROR]
 S3 - I am the service S3                                          [DEP_ERROR]
-""")
+""".format(NodeSet('BADNODE,HOSTNAME')))
 
     def test_execute_debug(self):
         '''CLI execute() (-d)'''
@@ -1348,12 +1348,39 @@ Options:
         '''Test command line output on UnhandledException in debug mode'''
         self.manager.call_services = \
                 lambda services, action, conf=None: raiser(ZeroDivisionError)
-        self._output_check(['start', '-d'], RC_UNKNOWN_EXCEPTION,
+        if sys.version_info[0] < 3 and sys.version_info[1] < 10:
+            self._output_check(['start', '-d'], RC_UNKNOWN_EXCEPTION,
 '''Traceback (most recent call last):
   File "source.py", line 000, in execute
     self.manager.call_services(services, action, conf=self._conf)
   File "source.py", line 000, in <lambda>
     lambda services, action, conf=None: raiser(ZeroDivisionError)
+  File "source.py", line 000, in raiser
+    raise exception
+ZeroDivisionError
+''',
+'''[00:00:00] DEBUG    - Configuration
+assumeyes: False
+config_dir: 
+confirm_actions: []
+dryrun: False
+fanout: 64
+nodeps: False
+report: no
+reverse_actions: ['stop']
+summary: False
+tags: {setoutput}
+verbosity: 5
+'''.format(setoutput=str(set())))
+        else:
+            self._output_check(['start', '-d'], RC_UNKNOWN_EXCEPTION,
+'''Traceback (most recent call last):
+  File "source.py", line 000, in execute
+    self.manager.call_services(services, action, conf=self._conf)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "source.py", line 000, in <lambda>
+    lambda services, action, conf=None: raiser(ZeroDivisionError)
+                                        ~~~~~~^^^^^^^^^^^^^^^^^^^
   File "source.py", line 000, in raiser
     raise exception
 ZeroDivisionError
